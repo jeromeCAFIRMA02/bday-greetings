@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Birthday Surprise</title>
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:ital@0;1&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Lato', sans-serif;
+      overflow: hidden;
+    }
+
+    /* Gift Box Container */
+    .gift-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      cursor: pointer;
+    }
+
+    .gift-box {
+      position: relative;
+      width: 120px;
+      height: 100px;
+      transition: transform 0.3s ease;
+    }
+
+    .gift-container:hover .gift-box {
+      transform: scale(1.1);
+    }
+
+    .gift-container.wobble .gift-box {
+      animation: wobble 0.6s ease;
+    }
+
+    /* Gift Box Base */
+    .box-base {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 80px;
+      background: linear-gradient(135deg, #b8860b 0%, #daa520 50%, #b8860b 100%);
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(218, 165, 32, 0.3);
+    }
+
+    .box-base::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px;
+      height: 100%;
+      background: linear-gradient(90deg, #cd7f32 0%, #e9967a 50%, #cd7f32 100%);
+    }
+
+    /* Gift Box Lid */
+    .box-lid {
+      position: absolute;
+      top: 0;
+      left: -5px;
+      width: calc(100% + 10px);
+      height: 25px;
+      background: linear-gradient(135deg, #daa520 0%, #ffd700 50%, #daa520 100%);
+      border-radius: 6px 6px 0 0;
+      transform-origin: bottom center;
+      transition: transform 0.5s ease;
+    }
+
+    .gift-container.opened .box-lid {
+      transform: rotateX(-120deg) translateY(-10px);
+    }
+
+    .box-lid::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 24px;
+      height: 100%;
+      background: linear-gradient(90deg, #cd7f32 0%, #e9967a 50%, #cd7f32 100%);
+    }
+
+    /* Ribbon Bow */
+    .ribbon-bow {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+    }
+
+    .bow-left, .bow-right {
+      position: absolute;
+      width: 30px;
+      height: 20px;
+      background: linear-gradient(135deg, #cd7f32 0%, #e9967a 100%);
+      border-radius: 50%;
+      top: 5px;
+    }
+
+    .bow-left {
+      left: -25px;
+      transform: rotate(-30deg);
+    }
+
+    .bow-right {
+      right: -25px;
+      transform: rotate(30deg);
+    }
+
+    .bow-center {
+      position: relative;
+      width: 16px;
+      height: 16px;
+      background: linear-gradient(135deg, #b87333 0%, #cd7f32 100%);
+      border-radius: 50%;
+      z-index: 2;
+    }
+
+    /* Sparkles */
+    .sparkle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: #ffd700;
+      border-radius: 50%;
+      opacity: 0;
+      animation: sparkle 2s infinite;
+    }
+
+    .sparkle:nth-child(1) { top: -30px; left: 20px; animation-delay: 0s; }
+    .sparkle:nth-child(2) { top: -20px; right: 10px; animation-delay: 0.5s; }
+    .sparkle:nth-child(3) { top: 30px; left: -20px; animation-delay: 1s; }
+    .sparkle:nth-child(4) { top: 50px; right: -15px; animation-delay: 1.5s; }
+
+    /* Gift Text */
+    .gift-text {
+      text-align: center;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .gift-text h2 {
+      font-family: 'Great Vibes', cursive;
+      font-size: 28px;
+      color: #daa520;
+      margin-bottom: 8px;
+      text-shadow: 0 2px 10px rgba(218, 165, 32, 0.5);
+    }
+
+    .gift-text p {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.7);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    /* Modal Overlay */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 15, 35, 0.8);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      z-index: 100;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* Modal Card */
+    .modal-card {
+      position: relative;
+      width: 100%;
+      max-width: 500px;
+      background: linear-gradient(145deg, #2a2a3e 0%, #1a1a2e 100%);
+      border-radius: 20px;
+      overflow: hidden;
+      transform: scale(0.8) translateY(50px);
+      transition: transform 0.4s ease;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-overlay.active .modal-card {
+      transform: scale(1) translateY(0);
+    }
+
+    /* Close Button */
+    .close-btn {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.3s ease;
+      z-index: 10;
+    }
+
+    .close-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .close-btn svg {
+      width: 20px;
+      height: 20px;
+      stroke: white;
+    }
+
+    /* Modal Content */
+    .modal-content {
+      padding: 40px;
+      position: relative;
+    }
+
+    /* Decorative Circles */
+    .decor-circle {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.1;
+    }
+
+    .decor-circle.top-right {
+      top: -50px;
+      right: -50px;
+      width: 150px;
+      height: 150px;
+      background: #cd7f32;
+    }
+
+    .decor-circle.bottom-left {
+      bottom: -40px;
+      left: -40px;
+      width: 120px;
+      height: 120px;
+      background: #daa520;
+    }
+
+    /* Card Layout */
+    .card-layout {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (min-width: 480px) {
+      .card-layout {
+        flex-direction: row;
+        align-items: center;
+      }
+    }
+
+    /* Text Content */
+    .text-content {
+      flex: 1;
+      text-align: center;
+    }
+
+    @media (min-width: 480px) {
+      .text-content {
+        text-align: left;
+      }
+    }
+
+    .text-content h2 {
+      font-family: 'Great Vibes', cursive;
+      font-size: 34px;
+      color: #cd7f32;
+      line-height: 1.1;
+    }
+
+    .text-content h2 span {
+      color: white;
+      display: block;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin: 16px 0;
+    }
+
+    @media (min-width: 480px) {
+      .divider {
+        justify-content: flex-start;
+      }
+    }
+
+    .divider span {
+      color: #e9967a;
+      font-size: 14px;
+    }
+
+    .divider-line {
+      width: 60px;
+      height: 1px;
+      background: #e9967a;
+    }
+
+    .name {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      font-style: italic;
+      color: white;
+      margin-bottom: 12px;
+    }
+
+    .message {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.7);
+      line-height: 1.6;
+      max-width: 280px;
+      margin: 0 auto;
+    }
+
+    @media (min-width: 480px) {
+      .message {
+        margin: 0;
+      }
+    }
+
+    /* Photo Frame */
+    .photo-frame {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .photo-bg {
+      position: absolute;
+      inset: -10px;
+      background: #1a1a2e;
+      border-radius: 20px;
+      transform: rotate(-3deg);
+    }
+
+    .photo-container {
+      position: relative;
+      width: 160px;
+      height: 200px;
+      border-radius: 16px;
+      overflow: hidden;
+      clip-path: polygon(10% 0%, 100% 5%, 95% 100%, 0% 95%);
+    }
+
+    .photo-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .photo-placeholder {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(205, 127, 50, 0.3), rgba(218, 165, 32, 0.3));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 60px;
+    }
+
+    .brush-stroke {
+      position: absolute;
+      background: rgba(26, 26, 46, 0.8);
+      border-radius: 20px;
+    }
+
+    .brush-stroke.bottom {
+      bottom: -8px;
+      left: -16px;
+      width: 80px;
+      height: 16px;
+      transform: rotate(-12deg);
+    }
+
+    .brush-stroke.top {
+      top: -8px;
+      right: -16px;
+      width: 64px;
+      height: 12px;
+      transform: rotate(12deg);
+    }
+
+    /* Emoji Row */
+    .emoji-row {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 24px;
+      font-size: 24px;
+    }
+
+    /* Bottom Accent */
+    .bottom-accent {
+      height: 8px;
+      background: linear-gradient(90deg, #cd7f32, #daa520, #cd7f32);
+    }
+
+    /* Confetti */
+    .confetti {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 200;
+    }
+
+    /* Animations */
+    @keyframes wobble {
+      0%, 100% { transform: rotate(0deg) scale(1.1); }
+      25% { transform: rotate(-10deg) scale(1.1); }
+      50% { transform: rotate(10deg) scale(1.1); }
+      75% { transform: rotate(-5deg) scale(1.1); }
+    }
+
+    @keyframes sparkle {
+      0%, 100% { opacity: 0; transform: scale(0); }
+      50% { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    @keyframes confetti-fall {
+      0% {
+        opacity: 1;
+        transform: translateY(0) rotate(0deg);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(400px) rotate(720deg);
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Gift Box -->
+  <div class="gift-container" id="giftContainer" onclick="openGift()">
+    <div class="gift-box">
+      <div class="sparkle"></div>
+      <div class="sparkle"></div>
+      <div class="sparkle"></div>
+      <div class="sparkle"></div>
+      <div class="box-base"></div>
+      <div class="box-lid">
+        <div class="ribbon-bow">
+          <div class="bow-left"></div>
+          <div class="bow-right"></div>
+          <div class="bow-center"></div>
+        </div>
+      </div>
+    </div>
+    <div class="gift-text">
+      <h2>Open Me!</h2>
+      <p>Click to see the surprise</p>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <button class="close-btn" onclick="closeModal(event)">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+
+      <div class="modal-content">
+        <div class="decor-circle top-right"></div>
+        <div class="decor-circle bottom-left"></div>
+
+        <div class="card-layout">
+          <!-- Text Side -->
+          <div class="text-content">
+            <h2>
+              Happy 25th
+              <span>Birthday</span>
+            </h2>
+            <div class="divider">
+              <span>✿</span>
+              <div class="divider-line"></div>
+              <span>✿</span>
+            </div>
+            <p class="name">To Rica Cesista Mengullo</p>
+            <p class="message">
+              Happy Birthday! 🥳🎂🎉
+
+Hi love love ko!
+
+Wishing you the happiest birthday ever po love! 🎈✨ Sana po love today puno ng saya, blessings, at good vibes 💖🙏 Another year added, another chance to grow, dream, and succeed 🌟💪 Thank you for being an amazing person and for spreading positivity love🫶😊 Enjoy every moment, eat lots of cake 🍰😋, and celebrate big 🎊🥂 May your heart stay happy, your dreams stay alive ✨🌈, and your life stay blessed always 🙏💫🎁🎉
+
+With love,💖
+            </p>
+          </div>
+
+          <!-- Photo Side -->
+          <div class="photo-frame">
+            <div class="photo-bg"></div>
+            <div class="photo-container">
+              <!-- Replace src with your image URL -->
+              <!--<div class="photo-placeholder">🎂</div>-->
+              <img src="images/4.jpg" alt="Birthday photo">
+            </div>
+            <div class="brush-stroke bottom"></div>
+            <div class="brush-stroke top"></div>
+          </div>
+        </div>
+
+        <div class="emoji-row">
+          <span>🎈</span>
+          <span>🎉</span>
+          <span>🎈</span>
+        </div>
+      </div>
+
+      <div class="bottom-accent"></div>
+    </div>
+  </div>
+
+  <script>
+    var giftContainer = document.getElementById('giftContainer');
+    var modalOverlay = document.getElementById('modalOverlay');
+
+    function openGift() {
+      // Add wobble animation
+      giftContainer.classList.add('wobble');
+      
+      // Create confetti
+      createConfetti();
+      
+      // Open the lid
+      setTimeout(function() {
+        giftContainer.classList.add('opened');
+      }, 300);
+      
+      // Show modal
+      setTimeout(function() {
+        modalOverlay.classList.add('active');
+      }, 800);
+    }
+
+    function closeModal(event) {
+      if (event) {
+        event.stopPropagation();
+      }
+      
+      // Hide modal
+      modalOverlay.classList.remove('active');
+      
+      // Reset gift box to original state
+      setTimeout(function() {
+        giftContainer.classList.remove('opened');
+        giftContainer.classList.remove('wobble');
+      }, 300);
+    }
+
+    function createConfetti() {
+      var colors = ['#daa520', '#cd7f32', '#ffd700', '#e9967a', '#ff6b6b', '#4ecdc4'];
+      
+      for (var i = 0; i < 30; i++) {
+        var confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = Math.random() * window.innerWidth + 'px';
+        confetti.style.top = Math.random() * 200 + 'px';
+        confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+        confetti.style.animation = 'confetti-fall ' + (Math.random() * 2 + 1) + 's ease-out forwards';
+        confetti.style.animationDelay = Math.random() * 0.5 + 's';
+        
+        document.body.appendChild(confetti);
+        
+        // Remove confetti after animation
+        setTimeout(function(el) {
+          return function() {
+            if (el.parentNode) {
+              el.parentNode.removeChild(el);
+            }
+          };
+        }(confetti), 3500);
+      }
+    }
+  </script>
+</body>
+</html>
